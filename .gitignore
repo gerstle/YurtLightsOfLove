@@ -1,0 +1,13 @@
+eclipse-settings.xml
+.cproject
+.project
+.settings
+*.o
+*.pb.*
+*.d
+main.elf
+main.hex
+make.defs
+*.pyc
+nanopb_pb2.py
+plugin_pb2.py
