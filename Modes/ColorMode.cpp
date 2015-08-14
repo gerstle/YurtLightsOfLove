@@ -27,7 +27,5 @@ void ColorMode::frame() {
 	    else
 	        tmp = _color;
 	    leds[i] = tmp;
-	    //led_print(i);
-	    hsv_print(tmp);
 	}
 }

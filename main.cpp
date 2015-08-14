@@ -1,6 +1,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <vector>
+#include <avr/eeprom.h>
 
 #include "WProgram.h"
 #include "leds.h"
@@ -12,6 +13,8 @@
 #define BRIGHTNESS_PIN 1
 #define MODE_PIN 0
 #define RANDOM_PIN 3
+
+#define EEPROM_ADDRESS 0
 
 bool modeChange = false;
 unsigned long lastActionTime = millis();
@@ -28,18 +31,14 @@ extern "C" int main(void)
 	static bool reboot = false;
 	int brightness = LED_DEFAULT_BRIGHTNESS;
 
+	analogReference(DEFAULT);
+	analogReadAveraging(4);
+
     pinMode(RANDOM_PIN, INPUT);
     randomSeed(analogRead(RANDOM_PIN));
     random16_add_entropy(random());
 
-//	analogReference(DEFAULT);
-//	analogReadResolution(10); // anything more seemed like overkill
-//	analogReadAveraging(10);
-
 	pinMode(LED_PIN, OUTPUT);
-	pinMode(15, INPUT);
-
-    // <cgerstle> button
     pinMode(MODE_PIN, INPUT);
     attachInterrupt(MODE_PIN, modeButtonChange, RISING);
 
@@ -50,7 +49,6 @@ extern "C" int main(void)
 	    leds[i] = CHSV(0, 0, 0);
 	led_init();
 
-
     std::vector<BaseMode*> modes;
     modes.push_back(new MeltMode());
     modes.push_back(new ColorMode("purple", CHSV(192, 255, 255), 125));
@@ -58,29 +56,27 @@ extern "C" int main(void)
     modes.push_back(new ColorMode("white", CHSV(0, 0, 255), 0));
     std::vector<BaseMode*>::iterator modeIterator = modes.begin();
 
-    Serial.printf("mode count: %d\n", modes.size());
-    for (std::vector<BaseMode*>::iterator it = modes.begin() ; it != modes.end(); ++it)
-    {
-        Serial.printf("mode: %s\n", (*it)->name());
-    }
+    // <cgerstle> eeprom seems to fuck my usb connection sometimes, comment out to use serial
+    eeprom_initialize();
+    byte modeIndex = eeprom_read_byte(EEPROM_ADDRESS);
+    if (modeIndex < modes.size())
+            modeIterator += modeIndex;
+    Serial.printf("mode Index: %d current mode: %s\n", modeIndex, (*modeIterator)->name());
 
 	for (uint8_t i = 0; i < nLEDS; i++)
 	    leds[i] = CHSV(0, 0, 0);
 	led_show();
-
-	// Get a random seed
-	randomSeed(analogRead(8));
 
 	while (1) {
 		if (reboot)
 			goto reboot;
 
 		brightness = analogRead(BRIGHTNESS_PIN);
-		//Serial.print(brightness); Serial.print("\t");
-		brightness = map(brightness, 525, 1023, 0, 255);
-		if (brightness < 15)
+//		Serial.print(brightness); Serial.print("\t");
+		brightness = map(brightness, 500, 1023, 0, 255);
+		if (brightness < 10)
 		    brightness = 0;
-		//Serial.println(brightness);
+//		Serial.println(brightness);
 		FastLED.setBrightness(brightness);
 
 		(*modeIterator)->frame();
@@ -98,7 +94,9 @@ extern "C" int main(void)
 		        modeIterator = modes.begin();
 		    }
 
-		    Serial.println((*modeIterator)->name());
+//		    Serial.println((*modeIterator)->name());
+//		    Serial.printf("new index: %d\r\n", modeIterator - modes.begin());
+		    eeprom_write_byte(EEPROM_ADDRESS, modeIterator - modes.begin());
 		    digitalWrite(LED_PIN, LOW);    // set the LED off
 		}
 	}
@@ -119,4 +117,3 @@ extern "C" int main(void)
 
     goto begin;
 }
-
