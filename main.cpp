@@ -8,6 +8,9 @@
 #include "Modes/BaseMode.h"
 #include "Modes/ColorMode.h"
 #include "Modes/MeltMode.h"
+#include "Modes/CloseEncounters.h"
+#include "Modes/Rainbow.h"
+#include "Moon.h"
 
 #define LED_PIN 13
 #define BRIGHTNESS_PIN 1
@@ -51,6 +54,10 @@ extern "C" int main(void)
 
     std::vector<BaseMode*> modes;
     modes.push_back(new MeltMode());
+    modes.push_back(new CloseEncounters());
+    modes.push_back(new Rainbow());
+    modes.push_back(new Moon());
+    modes.push_back(new ColorMode("red", CHSV(0, 255, 255), 150));
     modes.push_back(new ColorMode("purple", CHSV(192, 255, 255), 125));
     modes.push_back(new ColorMode("orange", CHSV(32, 255, 255), 125));
     modes.push_back(new ColorMode("white", CHSV(0, 0, 255), 0));
@@ -74,7 +81,7 @@ extern "C" int main(void)
 		brightness = analogRead(BRIGHTNESS_PIN);
 //		Serial.print(brightness); Serial.print("\t");
 		brightness = map(brightness, 500, 1023, 0, 255);
-		if (brightness < 10)
+		if (brightness < 5)
 		    brightness = 0;
 //		Serial.println(brightness);
 		FastLED.setBrightness(brightness);
