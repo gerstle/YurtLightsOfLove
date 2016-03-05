@@ -11,3 +11,7 @@ make.defs
 *.pyc
 nanopb_pb2.py
 plugin_pb2.py
+*.gsheet
+*.job
+*.pro
+*.s#*
